@@ -29,6 +29,8 @@ This plugin depends on [hop-geometry-type-plugin](https://github.com/edigonzales
 
 Both plugins use the Hop class-loader group `sogeo-geometry`. The GeoTools plugin therefore declares `hop-geometry-type` and `jts-core` as provided dependencies and **does not package them in its ZIP**. JTS and the `ValueMetaGeometry` implementation come from the separately installed Geometry type plugin, avoiding two incompatible JTS `Geometry` classes in the same pipeline.
 
+The vector distribution also excludes GeoTools' raster `gt-coverage`/ImageN stack. GeoPackage feature I/O uses the JDBC/DataStore path only; raster support will get its own module later.
+
 ## Build and test
 
 Requirements:
@@ -57,16 +59,16 @@ sources/
 └── hop-geotools-plugin/
 ```
 
-With a local Hop installation in `$HOP_HOME`, one command builds both plugins, runs the tests, installs both plugin distributions and restarts Hop GUI:
+With a local Hop installation in `$HOP_HOME`, the standard development entry point builds both plugins, runs the tests, installs both plugin distributions and restarts Hop GUI:
 
 ```bash
-bash scripts/dev-install-and-run.sh "$HOP_HOME"
+bash scripts/dev-sync-hop-plugin.sh "$HOP_HOME"
 ```
 
 If the Geometry type repository is elsewhere:
 
 ```bash
-bash scripts/dev-install-and-run.sh "$HOP_HOME" /path/to/hop-geometry-type-plugin
+bash scripts/dev-sync-hop-plugin.sh "$HOP_HOME" /path/to/hop-geometry-type-plugin
 ```
 
 The script installs:
