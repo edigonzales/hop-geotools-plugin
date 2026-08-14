@@ -12,7 +12,7 @@ sources/
 
 The GeoTools transforms and `ValueMetaGeometry` must share the Hop class-loader group `sogeo-geometry`. For that reason the GeoTools distribution does not contain another copy of `hop-geometry-type` or `jts-core`.
 
-The vector distribution also keeps GeoTools raster dependencies out: `gt-coverage` and ImageN belong to a later raster module, not to this MVP.
+The vector distribution excludes the GeoTools raster `gt-coverage` module. ImageN core remains present because GeoTools 35 declares it as a direct runtime dependency of `gt-main`; it belongs to the GeoTools core dependency set even though this MVP does not expose raster processing.
 
 ## Java and Maven
 
@@ -32,7 +32,7 @@ The script performs the following steps in order:
 1. runs `mvn clean install` in `hop-geometry-type-plugin`
 2. installs its ZIP into `$HOP_HOME/plugins/misc/hop-geometry-type`
 3. runs `mvn clean verify` in `hop-geotools-plugin`
-4. checks that the GeoTools ZIP contains the vector runtime, but neither another JTS/Geometry type copy nor the raster/ImageN stack
+4. checks that the GeoTools ZIP contains the vector runtime and required GeoTools core dependencies, but neither another JTS/Geometry type copy nor `gt-coverage`
 5. installs the ZIP into `$HOP_HOME/plugins/transforms/geotools-vector`
 6. stops a running Hop GUI process
 7. starts `$HOP_HOME/hop-gui.sh` again
