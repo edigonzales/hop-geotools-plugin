@@ -29,7 +29,7 @@ This plugin depends on [hop-geometry-type-plugin](https://github.com/edigonzales
 
 Both plugins use the Hop class-loader group `sogeo-geometry`. The GeoTools plugin therefore declares `hop-geometry-type` and `jts-core` as provided dependencies and **does not package them in its ZIP**. JTS and the `ValueMetaGeometry` implementation come from the separately installed Geometry type plugin, avoiding two incompatible JTS `Geometry` classes in the same pipeline.
 
-The vector distribution also excludes GeoTools' raster `gt-coverage`/ImageN stack. GeoPackage feature I/O uses the JDBC/DataStore path only; raster support will get its own module later.
+The vector distribution excludes GeoTools' raster `gt-coverage` module. `org.eclipse.imagen:imagen-core` is still present because GeoTools 35 declares it as a direct runtime dependency of `gt-main`; it is therefore part of the GeoTools core stack, not evidence that raster processing has been bundled into this MVP.
 
 ## Build and test
 
