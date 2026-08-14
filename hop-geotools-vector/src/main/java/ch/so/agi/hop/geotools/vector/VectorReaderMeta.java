@@ -19,7 +19,7 @@ import org.geotools.api.feature.simple.SimpleFeatureType;
 @Transform(
     id = "GEOTOOLS_VECTOR_READER",
     name = "Vector Reader",
-    description = "Read vector features with GeoTools",
+    description = "Read vector features from Shapefile or GeoPackage",
     categoryDescription = "Geospatial",
     classLoaderGroup = "sogeo-geometry",
     keywords = {"vector", "shapefile", "geopackage", "gis"})
