@@ -12,6 +12,8 @@ sources/
 
 The GeoTools transforms and `ValueMetaGeometry` must share the Hop class-loader group `sogeo-geometry`. For that reason the GeoTools distribution does not contain another copy of `hop-geometry-type` or `jts-core`.
 
+The vector distribution also keeps GeoTools raster dependencies out: `gt-coverage` and ImageN belong to a later raster module, not to this MVP.
+
 ## Java and Maven
 
 The project builds with Java 17 and Maven. The GeoTools artifacts are resolved from the OSGeo release repository.
@@ -22,7 +24,7 @@ Set `HOP_HOME` to an unpacked local Apache Hop installation and run:
 
 ```bash
 cd /path/to/hop-geotools-plugin
-bash scripts/dev-install-and-run.sh "$HOP_HOME"
+bash scripts/dev-sync-hop-plugin.sh "$HOP_HOME"
 ```
 
 The script performs the following steps in order:
@@ -30,7 +32,7 @@ The script performs the following steps in order:
 1. runs `mvn clean install` in `hop-geometry-type-plugin`
 2. installs its ZIP into `$HOP_HOME/plugins/misc/hop-geometry-type`
 3. runs `mvn clean verify` in `hop-geotools-plugin`
-4. checks that the GeoTools ZIP contains the GeoTools runtime but not another JTS/Geometry type copy
+4. checks that the GeoTools ZIP contains the vector runtime, but neither another JTS/Geometry type copy nor the raster/ImageN stack
 5. installs the ZIP into `$HOP_HOME/plugins/transforms/geotools-vector`
 6. stops a running Hop GUI process
 7. starts `$HOP_HOME/hop-gui.sh` again
@@ -44,7 +46,7 @@ ${TMPDIR:-/tmp}/hop-geotools-dev-hop.log
 If the Geometry type repository is not next to this repository, pass it explicitly:
 
 ```bash
-bash scripts/dev-install-and-run.sh "$HOP_HOME" /path/to/hop-geometry-type-plugin
+bash scripts/dev-sync-hop-plugin.sh "$HOP_HOME" /path/to/hop-geometry-type-plugin
 ```
 
 or set:
@@ -52,6 +54,8 @@ or set:
 ```bash
 export HOP_GEOMETRY_TYPE_REPO=/path/to/hop-geometry-type-plugin
 ```
+
+`dev-sync-hop-plugin.sh` is the familiar entry point used by the other Hop plugin repositories; it delegates to `dev-install-and-run.sh`, where the actual workflow lives.
 
 ## Manual build
 
