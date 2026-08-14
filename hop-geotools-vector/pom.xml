@@ -54,6 +54,13 @@
     <dependency>
       <groupId>org.geotools</groupId>
       <artifactId>gt-geopkg</artifactId>
+      <exclusions>
+        <!-- gt-geopkg also supports raster/tile content. The vector MVP only uses its JDBC feature store. -->
+        <exclusion>
+          <groupId>org.geotools</groupId>
+          <artifactId>gt-coverage</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.geotools</groupId>
