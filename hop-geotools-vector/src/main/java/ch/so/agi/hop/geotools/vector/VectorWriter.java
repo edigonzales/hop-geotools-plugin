@@ -4,14 +4,13 @@ import java.nio.file.Path;
 import org.apache.hop.core.exception.HopException;
 import org.apache.hop.core.exception.HopTransformException;
 import org.apache.hop.core.row.IValueMeta;
-import org.apache.hop.core.util.Utils;
 import org.apache.hop.pipeline.Pipeline;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.pipeline.transform.BaseTransform;
 import org.apache.hop.pipeline.transform.TransformMeta;
-import org.geotools.api.data.DefaultTransaction;
 import org.geotools.api.feature.simple.SimpleFeature;
 import org.geotools.api.feature.simple.SimpleFeatureType;
+import org.geotools.data.DefaultTransaction;
 import org.locationtech.jts.geom.Geometry;
 
 public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterData> {
