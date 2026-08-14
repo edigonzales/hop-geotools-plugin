@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import sys
 import zipfile
 
 root = Path(__file__).resolve().parents[1]
@@ -24,14 +23,21 @@ for fragment in required:
     if not any(fragment in name for name in names):
         raise SystemExit(f"{zip_path.name}: required dependency matching {fragment!r} is missing")
 
-forbidden = ["hop-geometry-type", "jts-core-"]
+forbidden = [
+    "hop-geometry-type",
+    "jts-core-",
+    "gt-coverage-",
+    "imagen-core-",
+]
 for fragment in forbidden:
     matches = [name for name in names if fragment in name]
     if matches:
         raise SystemExit(
-            f"{zip_path.name}: shared geometry dependency {fragment!r} must not be bundled: {matches}"
+            f"{zip_path.name}: dependency {fragment!r} must not be bundled in the vector MVP: {matches}"
         )
 
-print(f"Distribution OK: {zip_path}")
+size_mib = zip_path.stat().st_size / (1024 * 1024)
+print(f"Distribution OK: {zip_path} ({size_mib:.1f} MiB)")
 print("  GeoTools vector runtime is bundled")
 print("  hop-geometry-type and jts-core remain shared via classLoaderGroup=sogeo-geometry")
+print("  raster gt-coverage/ImageN core is not bundled")
