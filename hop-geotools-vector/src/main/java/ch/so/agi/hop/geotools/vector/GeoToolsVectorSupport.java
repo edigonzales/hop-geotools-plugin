@@ -22,7 +22,6 @@ import org.geotools.api.feature.type.GeometryDescriptor;
 import org.geotools.api.referencing.crs.CoordinateReferenceSystem;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.geopkg.GeoPackage;
 import org.geotools.geopkg.GeoPkgDataStoreFactory;
 import org.geotools.referencing.CRS;
 import org.locationtech.jts.geom.Geometry;
@@ -87,12 +86,7 @@ final class GeoToolsVectorSupport {
         }
         yield store;
       }
-      case GEOPACKAGE -> {
-        try (GeoPackage geoPackage = new GeoPackage(absolute.toFile())) {
-          geoPackage.init();
-        }
-        yield openGeoPackageDataStore(absolute, false);
-      }
+      case GEOPACKAGE -> openGeoPackageDataStore(absolute, false);
     };
   }
 
@@ -100,7 +94,7 @@ final class GeoToolsVectorSupport {
     GeoPkgDataStoreFactory factory = new GeoPkgDataStoreFactory();
     Map<String, Object> params = new HashMap<>();
     params.put(GeoPkgDataStoreFactory.DBTYPE.key, "geopkg");
-    params.put(GeoPkgDataStoreFactory.DATABASE.key, file.toString());
+    params.put(GeoPkgDataStoreFactory.DATABASE.key, file.toFile());
     params.put(GeoPkgDataStoreFactory.READ_ONLY.key, readOnly);
     DataStore store = factory.createDataStore(params);
     if (store == null) {
