@@ -186,7 +186,7 @@ final class GeoToolsVectorSupport {
     }
 
     String geometryName = inputRowMeta.getValueMeta(geometryFieldIndex).getName();
-    builder.add(geometryName, sampleGeometry.getClass());
+    builder.add(geometryName, CurveGeometryAdapter.geometryBinding(sampleGeometry));
     builder.setDefaultGeometry(geometryName);
     return builder.buildFeatureType();
   }

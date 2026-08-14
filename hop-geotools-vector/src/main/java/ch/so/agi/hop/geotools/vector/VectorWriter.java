@@ -76,7 +76,7 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
     }
     data.outputFile = Path.of(fileName.trim());
     try {
-      GeoToolsVectorSupport.detectFormat(data.outputFile);
+      data.format = GeoToolsVectorSupport.detectFormat(data.outputFile);
     } catch (IllegalArgumentException e) {
       throw new HopTransformException(e.getMessage(), e);
     }
@@ -109,13 +109,27 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
     if (typeNames.length == 0) {
       throw new HopTransformException("GeoTools created no writable layer in " + data.outputFile);
     }
+    String actualTypeName = typeNames[0];
 
-    data.transaction = new DefaultTransaction("hop-vector-writer");
-    data.writer = data.dataStore.getFeatureWriterAppend(typeNames[0], data.transaction);
+    if (data.format == GeoToolsVectorSupport.VectorFormat.GEOPACKAGE) {
+      data.dataStore.dispose();
+      data.dataStore = null;
+      data.geoPackageWriter =
+          GeoPackageFeatureWriter.open(
+              data.outputFile,
+              actualTypeName,
+              data.geometryFieldName,
+              data.inputRowMeta,
+              data.geometryFieldIndex,
+              sampleGeometry);
+    } else {
+      data.transaction = new DefaultTransaction("hop-vector-writer");
+      data.writer = data.dataStore.getFeatureWriterAppend(actualTypeName, data.transaction);
+    }
     data.initialized = true;
 
     if (isBasic()) {
-      logBasic("Created vector dataset " + data.outputFile + " layer " + typeNames[0]);
+      logBasic("Created vector dataset " + data.outputFile + " layer " + actualTypeName);
     }
   }
 
@@ -128,6 +142,12 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
   }
 
   private void writeRow(Object[] row) throws Exception {
+    Geometry geometry = geometry(row);
+    if (data.geoPackageWriter != null) {
+      data.geoPackageWriter.write(row, geometry);
+      return;
+    }
+
     SimpleFeature feature = data.writer.next();
     for (int i = 0; i < data.inputRowMeta.size(); i++) {
       if (i == data.geometryFieldIndex) {
@@ -137,7 +157,7 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
       Object value = GeoToolsVectorSupport.normalizeAttributeValue(valueMeta, row[i]);
       feature.setAttribute(valueMeta.getName(), value);
     }
-    feature.setDefaultGeometry(geometry(row));
+    feature.setDefaultGeometry(CurveGeometryAdapter.toShapefileGeometry(geometry));
     data.writer.write();
   }
 
@@ -147,7 +167,7 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
       return null;
     }
     if (value instanceof Geometry geometry) {
-      return geometry;
+      return CurveGeometryAdapter.toHopGeometry(geometry);
     }
     throw new HopTransformException(
         "Geometry field '"
@@ -176,6 +196,9 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
       if (data.transaction != null) {
         data.transaction.commit();
       }
+      if (data.geoPackageWriter != null) {
+        data.geoPackageWriter.commit();
+      }
     } catch (Exception e) {
       rollbackQuietly();
       throw new HopTransformException("Unable to finalize vector dataset", e);
@@ -190,6 +213,13 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
         data.transaction.rollback();
       } catch (Exception e) {
         logError("Unable to roll back vector output transaction", e);
+      }
+    }
+    if (data.geoPackageWriter != null) {
+      try {
+        data.geoPackageWriter.rollback();
+      } catch (Exception e) {
+        logError("Unable to roll back GeoPackage output transaction", e);
       }
     }
   }
@@ -216,6 +246,14 @@ public class VectorWriter extends BaseTransform<VectorWriterMeta, VectorWriterDa
         logError("Unable to close vector output transaction", e);
       }
       data.transaction = null;
+    }
+    if (data.geoPackageWriter != null) {
+      try {
+        data.geoPackageWriter.close();
+      } catch (Exception e) {
+        logError("Unable to close GeoPackage feature writer", e);
+      }
+      data.geoPackageWriter = null;
     }
     if (data.dataStore != null) {
       try {

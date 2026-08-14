@@ -13,6 +13,7 @@ import org.geotools.api.feature.simple.SimpleFeature;
 import org.geotools.api.feature.simple.SimpleFeatureType;
 import org.geotools.api.feature.type.AttributeDescriptor;
 import org.geotools.api.feature.type.GeometryDescriptor;
+import org.locationtech.jts.geom.Geometry;
 
 public class VectorReader extends BaseTransform<VectorReaderMeta, VectorReaderData> {
 
@@ -39,7 +40,11 @@ public class VectorReader extends BaseTransform<VectorReaderMeta, VectorReaderDa
       for (String attributeName : data.attributeNames) {
         row[index++] = feature.getAttribute(attributeName);
       }
-      row[data.geometryIndex] = feature.getDefaultGeometry();
+      Object defaultGeometry = feature.getDefaultGeometry();
+      row[data.geometryIndex] =
+          defaultGeometry instanceof Geometry geometry
+              ? CurveGeometryAdapter.toHopGeometry(geometry)
+              : defaultGeometry;
       putRow(data.outputRowMeta, row);
       return true;
     }
