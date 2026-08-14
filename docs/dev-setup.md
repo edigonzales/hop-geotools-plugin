@@ -1,0 +1,124 @@
+# Development Setup
+
+## Repositories
+
+Keep these repositories next to each other for the shortest development loop:
+
+```text
+sources/
+├── hop-geometry-type-plugin/
+└── hop-geotools-plugin/
+```
+
+The GeoTools transforms and `ValueMetaGeometry` must share the Hop class-loader group `sogeo-geometry`. For that reason the GeoTools distribution does not contain another copy of `hop-geometry-type` or `jts-core`.
+
+## Java and Maven
+
+The project builds with Java 17 and Maven. The GeoTools artifacts are resolved from the OSGeo release repository.
+
+## One-command development loop
+
+Set `HOP_HOME` to an unpacked local Apache Hop installation and run:
+
+```bash
+cd /path/to/hop-geotools-plugin
+bash scripts/dev-install-and-run.sh "$HOP_HOME"
+```
+
+The script performs the following steps in order:
+
+1. runs `mvn clean install` in `hop-geometry-type-plugin`
+2. installs its ZIP into `$HOP_HOME/plugins/misc/hop-geometry-type`
+3. runs `mvn clean verify` in `hop-geotools-plugin`
+4. checks that the GeoTools ZIP contains the GeoTools runtime but not another JTS/Geometry type copy
+5. installs the ZIP into `$HOP_HOME/plugins/transforms/geotools-vector`
+6. stops a running Hop GUI process
+7. starts `$HOP_HOME/hop-gui.sh` again
+
+Hop startup output is written to:
+
+```text
+${TMPDIR:-/tmp}/hop-geotools-dev-hop.log
+```
+
+If the Geometry type repository is not next to this repository, pass it explicitly:
+
+```bash
+bash scripts/dev-install-and-run.sh "$HOP_HOME" /path/to/hop-geometry-type-plugin
+```
+
+or set:
+
+```bash
+export HOP_GEOMETRY_TYPE_REPO=/path/to/hop-geometry-type-plugin
+```
+
+## Manual build
+
+Build and install the Geometry type dependency into the local Maven repository:
+
+```bash
+mvn -f ../hop-geometry-type-plugin/pom.xml -U clean install
+```
+
+Build and test this plugin:
+
+```bash
+mvn -U clean verify
+python3 scripts/check-distribution.py
+```
+
+The resulting distribution is:
+
+```text
+assemblies/assemblies-hop-geotools/target/hop-geotools-plugin-0.1.0-SNAPSHOT.zip
+```
+
+Install manually:
+
+```bash
+rm -rf "$HOP_HOME/plugins/misc/hop-geometry-type"
+unzip -q -o \
+  ../hop-geometry-type-plugin/assemblies/assemblies-hop-geometry-type/target/hop-geometry-type-plugin-0.1.0-SNAPSHOT.zip \
+  -d "$HOP_HOME"
+
+rm -rf "$HOP_HOME/plugins/transforms/geotools-vector"
+unzip -q -o \
+  assemblies/assemblies-hop-geotools/target/hop-geotools-plugin-0.1.0-SNAPSHOT.zip \
+  -d "$HOP_HOME"
+```
+
+Then restart Hop GUI so that the plugin registry and plugin class loaders are recreated.
+
+## Quick functional check
+
+Create a pipeline:
+
+```text
+Vector Reader -> Vector Writer
+```
+
+Example:
+
+- Reader file: `/tmp/input.shp`
+- Reader layer: empty
+- Reader geometry field: `geometry`
+- Writer file: `/tmp/output.gpkg`
+- Writer layer: `parcels`
+- Writer geometry field: `geometry`
+
+Run it once. The MVP deliberately fails if the output file already exists, so delete `/tmp/output.gpkg` before repeating the test.
+
+Read `output.gpkg` with another `Vector Reader` to verify the result.
+
+## Current MVP limitations
+
+- Shapefile and GeoPackage only
+- one input layer at a time
+- output files must not already exist
+- output geometry type is inferred from the first non-null geometry
+- an input where every geometry is null cannot be written yet
+- no reprojection, clipping or other geoprocessing in Reader/Writer
+- no generic DataStore parameter UI yet
+
+These limitations are intentional so the initial implementation can prove GeoTools I/O, Hop integration, packaging and class-loader behaviour before expanding the scope.
