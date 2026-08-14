@@ -40,7 +40,6 @@ Requirements:
 Install the Geometry type snapshot first, then build this repository:
 
 ```bash
-../hop-geometry-type-plugin/mvnw 2>/dev/null || true
 mvn -f ../hop-geometry-type-plugin/pom.xml -U clean install
 mvn -U clean verify
 python3 scripts/check-distribution.py
