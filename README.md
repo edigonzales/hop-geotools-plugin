@@ -49,6 +49,20 @@ python3 scripts/check-distribution.py
 
 The tests perform real Shapefile and GeoPackage writes/reads in temporary directories. CI runs the same build on Linux, macOS and Windows.
 
+## Releases
+
+Pushes to `main` publish the installable plugin distribution as a public GitHub Release after the Maven tests and `scripts/check-distribution.py` have passed.
+
+The release contains exactly one platform-independent asset:
+
+```text
+hop-geotools-plugin-<version>.zip
+```
+
+The ZIP contains `plugins/transforms/geotools-vector/` and its GeoTools runtime dependencies. It deliberately does **not** contain `hop-geometry-type` or `jts-core`; the final Hop distribution supplies those once through the shared Geometry Type plugin.
+
+`hop-distributions` consumes this GitHub Release asset directly. The Maven repositories are only needed for Java build dependencies such as the provided `hop-geometry-type` artifact.
+
 ## Fast local Hop development
 
 The intended directory layout is:
