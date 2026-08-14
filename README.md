@@ -31,6 +31,22 @@ Both plugins use the Hop class-loader group `sogeo-geometry`. The GeoTools plugi
 
 The vector distribution excludes GeoTools' raster `gt-coverage` module. `org.eclipse.imagen:imagen-core` is still present because GeoTools 35 declares it as a direct runtime dependency of `gt-main`; it is therefore part of the GeoTools core stack, not evidence that raster processing has been bundled into this MVP.
 
+## Curved geometries
+
+The Hop geometry value type is the canonical in-pipeline representation for SQL/MM curved geometries. GeoTools curve implementations are adapted at the `Vector Reader` boundary, so downstream transforms see the curve classes from `hop-geometry-type-plugin`, not `org.geotools.geometry.jts.*` curve classes.
+
+The following 2D geometry types are preserved when reading and writing GeoPackage:
+
+- `CIRCULARSTRING`
+- `COMPOUNDCURVE`
+- `CURVEPOLYGON`
+- `MULTICURVE`
+- `MULTISURFACE`
+
+For GeoPackage output the writer registers the corresponding `gpkg_geom_<TYPE>` read-write extension, stores the extended type in `gpkg_geometry_columns`, and writes the exact SQL/MM curve WKB from the shared geometry type. This avoids the implicit linearization that occurs when a curved `LineString` is passed to the standard JTS `WKBWriter`.
+
+Shapefile has no native curved geometry type. Curves are therefore explicitly linearized before they are handed to the Shapefile writer. The current curve implementation is 2D; Z/M curve ordinates are not supported yet.
+
 ## Build and test
 
 Requirements:
@@ -47,7 +63,7 @@ mvn -U clean verify
 python3 scripts/check-distribution.py
 ```
 
-The tests perform real Shapefile and GeoPackage writes/reads in temporary directories. CI runs the same build on Linux, macOS and Windows.
+The tests perform real Shapefile and GeoPackage writes/reads in temporary directories. Curve tests perform file roundtrips for `CIRCULARSTRING`, `COMPOUNDCURVE`, and `CURVEPOLYGON`, verify the GeoPackage extension metadata, and verify explicit Shapefile linearization. CI runs the same build on Linux, macOS and Windows.
 
 ## Releases
 

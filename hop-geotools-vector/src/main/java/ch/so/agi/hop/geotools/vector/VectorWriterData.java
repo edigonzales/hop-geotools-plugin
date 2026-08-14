@@ -20,8 +20,10 @@ public class VectorWriterData extends BaseTransformData implements ITransformDat
   String geometryFieldName;
   String layerName;
   Path outputFile;
+  GeoToolsVectorSupport.VectorFormat format;
   DataStore dataStore;
   Transaction transaction;
   FeatureWriter<SimpleFeatureType, SimpleFeature> writer;
+  GeoPackageFeatureWriter geoPackageWriter;
   List<Object[]> pendingRows = new ArrayList<>();
 }

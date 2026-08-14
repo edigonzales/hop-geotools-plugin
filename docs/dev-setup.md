@@ -115,6 +115,14 @@ Run it once. The MVP deliberately fails if the output file already exists, so de
 
 Read `output.gpkg` with another `Vector Reader` to verify the result.
 
+### Curve check
+
+For a GeoPackage containing `CIRCULARSTRING`, `COMPOUNDCURVE`, or `CURVEPOLYGON`, run a GeoPackage-to-GeoPackage pipeline and inspect the output again with `Vector Reader`. The geometry remains a curve in the shared Hop `Geometry` value type and the output GeoPackage registers the matching `gpkg_geom_<TYPE>` extension.
+
+Writing the same curve geometry to Shapefile is intentionally different: Shapefile has no curved geometry type, so the writer linearizes the curve explicitly before writing.
+
+The automated tests cover exact file roundtrips for `CIRCULARSTRING`, `COMPOUNDCURVE`, and `CURVEPOLYGON`, GeoPackage extension metadata, ordinary point output through the same GeoPackage path, and Shapefile linearization.
+
 ## Current MVP limitations
 
 - Shapefile and GeoPackage only
@@ -122,6 +130,8 @@ Read `output.gpkg` with another `Vector Reader` to verify the result.
 - output files must not already exist
 - output geometry type is inferred from the first non-null geometry
 - an input where every geometry is null cannot be written yet
+- curved geometries are currently 2D only; curve Z/M ordinates are not supported
+- Shapefile necessarily linearizes curved geometries
 - no reprojection, clipping or other geoprocessing in Reader/Writer
 - no generic DataStore parameter UI yet
 
