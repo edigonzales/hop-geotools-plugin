@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Path;
+import org.apache.hop.core.row.RowMeta;
 import org.apache.hop.core.row.value.ValueMetaBoolean;
 import org.apache.hop.core.row.value.ValueMetaInteger;
 import org.apache.hop.core.row.value.ValueMetaNumber;
@@ -48,6 +49,24 @@ class GeoToolsVectorSupportTest {
   }
 
   @Test
+  void blankGeometryOutputFieldPreservesSourceGeometryName() {
+    SimpleFeatureType type = featureType("places", "source_geom");
+
+    RowMeta rowMeta = GeoToolsVectorSupport.toHopRowMeta(type, "");
+
+    assertThat(rowMeta.getValueMeta(rowMeta.size() - 1).getName()).isEqualTo("source_geom");
+  }
+
+  @Test
+  void explicitGeometryOutputFieldOverridesSourceGeometryName() {
+    SimpleFeatureType type = featureType("places", "source_geom");
+
+    RowMeta rowMeta = GeoToolsVectorSupport.toHopRowMeta(type, "geometry");
+
+    assertThat(rowMeta.getValueMeta(rowMeta.size() - 1).getName()).isEqualTo("geometry");
+  }
+
+  @Test
   void createsAndReadsGeoPackage() throws Exception {
     Path file = tempDir.resolve("places.gpkg");
     writeFixture(file);
@@ -59,6 +78,15 @@ class GeoToolsVectorSupportTest {
     Path file = tempDir.resolve("places.shp");
     writeFixture(file);
     assertFixture(file);
+  }
+
+  private SimpleFeatureType featureType(String layerName, String geometryFieldName) {
+    SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
+    builder.setName(layerName);
+    builder.add("name", String.class);
+    builder.add(geometryFieldName, Point.class);
+    builder.setDefaultGeometry(geometryFieldName);
+    return builder.buildFeatureType();
   }
 
   private void writeFixture(Path file) throws Exception {

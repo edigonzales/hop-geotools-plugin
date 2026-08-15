@@ -132,8 +132,24 @@ final class GeoToolsVectorSupport {
       }
       rowMeta.addValueMeta(toHopValueMeta(descriptor));
     }
-    rowMeta.addValueMeta(new ValueMetaGeometry(normalizeGeometryFieldName(geometryFieldName)));
+    rowMeta.addValueMeta(
+        new ValueMetaGeometry(resolveGeometryOutputFieldName(featureType, geometryFieldName)));
     return rowMeta;
+  }
+
+  static String resolveGeometryOutputFieldName(
+      SimpleFeatureType featureType, String geometryFieldNameOverride) {
+    if (geometryFieldNameOverride != null && !geometryFieldNameOverride.isBlank()) {
+      return geometryFieldNameOverride.trim();
+    }
+
+    GeometryDescriptor geometryDescriptor = featureType.getGeometryDescriptor();
+    if (geometryDescriptor != null
+        && geometryDescriptor.getLocalName() != null
+        && !geometryDescriptor.getLocalName().isBlank()) {
+      return geometryDescriptor.getLocalName();
+    }
+    return "geometry";
   }
 
   static IValueMeta toHopValueMeta(AttributeDescriptor descriptor) {
@@ -214,10 +230,6 @@ final class GeoToolsVectorSupport {
       case IValueMeta.TYPE_DATE, IValueMeta.TYPE_TIMESTAMP -> value;
       default -> value.toString();
     };
-  }
-
-  static String normalizeGeometryFieldName(String value) {
-    return value == null || value.isBlank() ? "geometry" : value.trim();
   }
 
   private static CoordinateReferenceSystem coordinateReferenceSystem(Geometry geometry)

@@ -20,6 +20,7 @@ import org.geotools.api.feature.simple.SimpleFeatureType;
     id = "GEOTOOLS_VECTOR_READER",
     name = "Vector Reader",
     description = "Read vector features from Shapefile or GeoPackage",
+    image = "ch/so/agi/hop/geotools/vector/icons/vector-reader.svg",
     categoryDescription = "Geospatial",
     classLoaderGroup = "sogeo-geometry",
     keywords = {"vector", "shapefile", "geopackage", "gis"})
@@ -33,7 +34,7 @@ public class VectorReaderMeta extends BaseTransformMeta<VectorReader, VectorRead
   public void setDefault() {
     fileName = "";
     layerName = "";
-    geometryFieldName = "geometry";
+    geometryFieldName = "";
   }
 
   @Override
