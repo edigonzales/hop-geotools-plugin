@@ -48,6 +48,8 @@ final class GeoToolsVectorSupport {
   }
 
   static DataStore open(Path file) throws IOException {
+    GeoToolsRuntimeSupport.initialize();
+
     Path absolute = file.toAbsolutePath().normalize();
     if (!Files.isRegularFile(absolute)) {
       throw new IOException("Vector dataset does not exist: " + absolute);
@@ -66,6 +68,8 @@ final class GeoToolsVectorSupport {
   }
 
   static DataStore create(Path file) throws IOException {
+    GeoToolsRuntimeSupport.initialize();
+
     Path absolute = file.toAbsolutePath().normalize();
     if (Files.exists(absolute)) {
       throw new IOException("Output dataset already exists: " + absolute);
@@ -185,6 +189,8 @@ final class GeoToolsVectorSupport {
   static SimpleFeatureType buildFeatureType(
       String layerName, IRowMeta inputRowMeta, int geometryFieldIndex, Geometry sampleGeometry)
       throws Exception {
+    GeoToolsRuntimeSupport.initialize();
+
     SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
     builder.setName(layerName);
 
@@ -234,6 +240,8 @@ final class GeoToolsVectorSupport {
 
   private static CoordinateReferenceSystem coordinateReferenceSystem(Geometry geometry)
       throws Exception {
+    GeoToolsRuntimeSupport.initialize();
+
     if (geometry == null || geometry.getSRID() <= 0) {
       return null;
     }
