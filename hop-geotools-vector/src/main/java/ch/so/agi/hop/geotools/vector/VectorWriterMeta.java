@@ -18,6 +18,7 @@ import org.apache.hop.pipeline.transform.TransformMeta;
     id = "GEOTOOLS_VECTOR_WRITER",
     name = "Vector Writer",
     description = "Write vector features to Shapefile or GeoPackage",
+    image = "ch/so/agi/hop/geotools/vector/icons/vector-writer.svg",
     categoryDescription = "Geospatial",
     classLoaderGroup = "sogeo-geometry",
     keywords = {"vector", "shapefile", "geopackage", "gis"})

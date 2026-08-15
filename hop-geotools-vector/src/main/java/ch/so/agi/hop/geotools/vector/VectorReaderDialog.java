@@ -1,10 +1,13 @@
 package ch.so.agi.hop.geotools.vector;
 
+import java.nio.file.Path;
+import java.util.List;
 import org.apache.hop.core.util.Utils;
 import org.apache.hop.core.variables.IVariables;
 import org.apache.hop.pipeline.PipelineMeta;
 import org.apache.hop.ui.core.PropsUi;
 import org.apache.hop.ui.core.dialog.BaseDialog;
+import org.apache.hop.ui.core.widget.ComboVar;
 import org.apache.hop.ui.core.widget.TextVar;
 import org.apache.hop.ui.pipeline.transform.BaseTransformDialog;
 import org.eclipse.swt.SWT;
@@ -21,8 +24,11 @@ public class VectorReaderDialog extends BaseTransformDialog {
 
   private final VectorReaderMeta input;
   private TextVar wFileName;
-  private TextVar wLayerName;
+  private ComboVar wLayerName;
   private TextVar wGeometryFieldName;
+  private Text wAvailableFieldsPreview;
+  private List<VectorSchemaProbe.LayerDefinition> layerDefinitions = List.of();
+  private boolean suppressSchemaRefresh;
 
   public VectorReaderDialog(
       Shell parent, IVariables variables, VectorReaderMeta transformMeta, PipelineMeta pipelineMeta) {
@@ -36,7 +42,7 @@ public class VectorReaderDialog extends BaseTransformDialog {
     PropsUi.setLook(shell);
     setShellImage(shell, input);
     shell.setText("Vector Reader");
-    shell.setMinimumSize(720, 330);
+    shell.setMinimumSize(760, 520);
 
     changed = input.hasChanged();
     FormLayout layout = new FormLayout();
@@ -89,7 +95,7 @@ public class VectorReaderDialog extends BaseTransformDialog {
     wFileName.setLayoutData(fdFile);
 
     Label wlLayer = new Label(shell, SWT.RIGHT);
-    wlLayer.setText("Layer (optional)");
+    wlLayer.setText("Layer name (optional)");
     PropsUi.setLook(wlLayer);
     FormData fdlLayer = new FormData();
     fdlLayer.left = new FormAttachment(0, 0);
@@ -97,7 +103,7 @@ public class VectorReaderDialog extends BaseTransformDialog {
     fdlLayer.top = new FormAttachment(wFileName, margin);
     wlLayer.setLayoutData(fdlLayer);
 
-    wLayerName = new TextVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    wLayerName = new ComboVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
     PropsUi.setLook(wLayerName);
     FormData fdLayer = new FormData();
     fdLayer.left = new FormAttachment(props.getMiddlePct(), 0);
@@ -115,6 +121,8 @@ public class VectorReaderDialog extends BaseTransformDialog {
     wlGeometry.setLayoutData(fdlGeometry);
 
     wGeometryFieldName = new TextVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+    wGeometryFieldName.setToolTipText(
+        "Optional. If empty, the source geometry attribute name is preserved.");
     PropsUi.setLook(wGeometryFieldName);
     FormData fdGeometry = new FormData();
     fdGeometry.left = new FormAttachment(props.getMiddlePct(), 0);
@@ -122,21 +130,54 @@ public class VectorReaderDialog extends BaseTransformDialog {
     fdGeometry.top = new FormAttachment(wLayerName, margin);
     wGeometryFieldName.setLayoutData(fdGeometry);
 
+    Label wlAvailableFields = new Label(shell, SWT.RIGHT);
+    wlAvailableFields.setText("Available fields");
+    PropsUi.setLook(wlAvailableFields);
+    FormData fdlAvailableFields = new FormData();
+    fdlAvailableFields.left = new FormAttachment(0, 0);
+    fdlAvailableFields.right = new FormAttachment(props.getMiddlePct(), -margin);
+    fdlAvailableFields.top = new FormAttachment(wGeometryFieldName, margin);
+    wlAvailableFields.setLayoutData(fdlAvailableFields);
+
+    wAvailableFieldsPreview =
+        new Text(shell, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+    wAvailableFieldsPreview.setEditable(false);
+    PropsUi.setLook(wAvailableFieldsPreview);
+    FormData fdAvailableFields = new FormData();
+    fdAvailableFields.left = new FormAttachment(props.getMiddlePct(), 0);
+    fdAvailableFields.right = new FormAttachment(100, 0);
+    fdAvailableFields.top = new FormAttachment(wGeometryFieldName, margin);
+    fdAvailableFields.height = 170;
+    wAvailableFieldsPreview.setLayoutData(fdAvailableFields);
+
     Button wOk = new Button(shell, SWT.PUSH);
     wOk.setText("OK");
     Button wCancel = new Button(shell, SWT.PUSH);
     wCancel.setText("Cancel");
-    setButtonPositions(new Button[] {wOk, wCancel}, margin, wGeometryFieldName);
+    setButtonPositions(new Button[] {wOk, wCancel}, margin, wAvailableFieldsPreview);
 
     wTransformName.addModifyListener(e -> input.setChanged());
-    wFileName.addModifyListener(e -> input.setChanged());
-    wLayerName.addModifyListener(e -> input.setChanged());
+    wFileName.addModifyListener(
+        e -> {
+          input.setChanged();
+          if (!suppressSchemaRefresh) {
+            loadLayersAndPreview();
+          }
+        });
+    wLayerName.addModifyListener(
+        e -> {
+          input.setChanged();
+          if (!suppressSchemaRefresh) {
+            refreshFieldsPreview();
+          }
+        });
     wGeometryFieldName.addModifyListener(e -> input.setChanged());
     wbFile.addListener(SWT.Selection, e -> browse());
     wOk.addListener(SWT.Selection, e -> ok());
     wCancel.addListener(SWT.Selection, e -> cancel());
 
     getData();
+    loadLayersAndPreview();
     input.setChanged(changed);
     BaseDialog.defaultShellHandling(shell, c -> ok(), c -> cancel());
     return transformName;
@@ -153,12 +194,119 @@ public class VectorReaderDialog extends BaseTransformDialog {
   }
 
   private void getData() {
-    wFileName.setText(Utils.isEmpty(input.getFileName()) ? "" : input.getFileName());
-    wLayerName.setText(Utils.isEmpty(input.getLayerName()) ? "" : input.getLayerName());
-    wGeometryFieldName.setText(
-        Utils.isEmpty(input.getGeometryFieldName()) ? "geometry" : input.getGeometryFieldName());
+    suppressSchemaRefresh = true;
+    try {
+      wFileName.setText(Utils.isEmpty(input.getFileName()) ? "" : input.getFileName());
+      wLayerName.setText(Utils.isEmpty(input.getLayerName()) ? "" : input.getLayerName());
+      wGeometryFieldName.setText(
+          Utils.isEmpty(input.getGeometryFieldName()) ? "" : input.getGeometryFieldName());
+      resetAvailableFieldsPreview("Select a vector file to inspect its schema.");
+    } finally {
+      suppressSchemaRefresh = false;
+    }
     wTransformName.selectAll();
     wTransformName.setFocus();
+  }
+
+  private void loadLayersAndPreview() {
+    String resolvedFileName = resolveUiValue(wFileName.getText());
+    if (resolvedFileName.isBlank()) {
+      layerDefinitions = List.of();
+      clearLayerCombo();
+      resetAvailableFieldsPreview("Select a vector file to inspect its schema.");
+      return;
+    }
+    if (resolvedFileName.contains("${")) {
+      layerDefinitions = List.of();
+      clearLayerCombo();
+      resetAvailableFieldsPreview(
+          "Schema preview unavailable because the file name contains unresolved variables.");
+      return;
+    }
+
+    try {
+      layerDefinitions = VectorSchemaProbe.readLayers(Path.of(resolvedFileName));
+      populateLayerCombo(layerDefinitions);
+      refreshFieldsPreview();
+    } catch (Exception e) {
+      layerDefinitions = List.of();
+      clearLayerCombo();
+      String message = e.getMessage();
+      resetAvailableFieldsPreview(
+          Utils.isEmpty(message)
+              ? "No schema information available."
+              : "No schema information available.\n" + message);
+    }
+  }
+
+  private void populateLayerCombo(List<VectorSchemaProbe.LayerDefinition> layers) {
+    String currentLayer = resolveUiValue(wLayerName.getText());
+    suppressSchemaRefresh = true;
+    try {
+      wLayerName.removeAll();
+      for (VectorSchemaProbe.LayerDefinition layer : layers) {
+        wLayerName.add(layer.name());
+      }
+
+      if (layers.isEmpty()) {
+        wLayerName.setText("");
+        return;
+      }
+
+      try {
+        wLayerName.setText(VectorSchemaProbe.resolveLayer(layers, currentLayer).name());
+      } catch (IllegalArgumentException e) {
+        wLayerName.setText(layers.get(0).name());
+      }
+    } finally {
+      suppressSchemaRefresh = false;
+    }
+  }
+
+  private void clearLayerCombo() {
+    suppressSchemaRefresh = true;
+    try {
+      wLayerName.removeAll();
+      wLayerName.setText("");
+    } finally {
+      suppressSchemaRefresh = false;
+    }
+  }
+
+  private void refreshFieldsPreview() {
+    if (layerDefinitions.isEmpty()) {
+      resetAvailableFieldsPreview("Vector dataset contains no layers.");
+      return;
+    }
+
+    try {
+      VectorSchemaProbe.LayerDefinition layer =
+          VectorSchemaProbe.resolveLayer(layerDefinitions, resolveUiValue(wLayerName.getText()));
+      if (!layer.name().equals(wLayerName.getText())) {
+        suppressSchemaRefresh = true;
+        try {
+          wLayerName.setText(layer.name());
+        } finally {
+          suppressSchemaRefresh = false;
+        }
+      }
+      wAvailableFieldsPreview.setText(VectorSchemaProbe.formatFieldPreview(layer));
+    } catch (IllegalArgumentException e) {
+      resetAvailableFieldsPreview(e.getMessage());
+    }
+  }
+
+  private void resetAvailableFieldsPreview(String message) {
+    if (wAvailableFieldsPreview != null && !wAvailableFieldsPreview.isDisposed()) {
+      wAvailableFieldsPreview.setText(message == null ? "" : message);
+    }
+  }
+
+  private String resolveUiValue(String value) {
+    if (value == null) {
+      return "";
+    }
+    return variables == null ? value.trim() : variables.resolve(value).trim();
   }
 
   private void ok() {

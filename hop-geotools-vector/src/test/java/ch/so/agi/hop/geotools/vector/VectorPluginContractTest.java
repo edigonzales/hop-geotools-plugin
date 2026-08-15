@@ -20,6 +20,17 @@ class VectorPluginContractTest {
   }
 
   @Test
+  void readerAndWriterDeclareIcons() {
+    Transform reader = VectorReaderMeta.class.getAnnotation(Transform.class);
+    Transform writer = VectorWriterMeta.class.getAnnotation(Transform.class);
+
+    assertThat(reader.image())
+        .isEqualTo("ch/so/agi/hop/geotools/vector/icons/vector-reader.svg");
+    assertThat(writer.image())
+        .isEqualTo("ch/so/agi/hop/geotools/vector/icons/vector-writer.svg");
+  }
+
+  @Test
   void userFacingNamesDoNotExposeGeoTools() {
     Transform reader = VectorReaderMeta.class.getAnnotation(Transform.class);
     Transform writer = VectorWriterMeta.class.getAnnotation(Transform.class);

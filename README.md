@@ -11,9 +11,11 @@ The first implementation focuses on vector file I/O:
 - **Vector Reader**
   - Shapefile (`.shp`)
   - GeoPackage (`.gpkg`)
-  - optional layer name; the first layer is used when omitted
+  - layer names are discovered from the GeoTools DataStore and offered in the dialog; the first layer is used when omitted
+  - the dialog shows a read-only schema preview with source attributes, geometry field name and geometry type
   - attributes become normal Hop fields
   - geometry is emitted using the existing Hop `Geometry` value type
+  - the geometry output field is optional; when omitted the source geometry attribute name is preserved, with `geometry` used only as a fallback
 - **Vector Writer**
   - Shapefile (`.shp`)
   - GeoPackage (`.gpkg`)
@@ -63,7 +65,7 @@ mvn -U clean verify
 python3 scripts/check-distribution.py
 ```
 
-The tests perform real Shapefile and GeoPackage writes/reads in temporary directories. Curve tests perform file roundtrips for `CIRCULARSTRING`, `COMPOUNDCURVE`, and `CURVEPOLYGON`, verify the GeoPackage extension metadata, and verify explicit Shapefile linearization. CI runs the same build on Linux, macOS and Windows.
+The tests perform real Shapefile and GeoPackage writes/reads in temporary directories. Schema-probe tests create a multi-layer GeoPackage and verify layer discovery, geometry column names and field metadata. Curve tests perform file roundtrips for `CIRCULARSTRING`, `COMPOUNDCURVE`, and `CURVEPOLYGON`, verify the GeoPackage extension metadata, and verify explicit Shapefile linearization. CI runs the same build on Linux, macOS and Windows.
 
 ## Releases
 
@@ -119,12 +121,12 @@ After running the development script, create a pipeline like:
 ```text
 Vector Reader                    Vector Writer
 ------------                    -------------
-input.shp             --->       output.gpkg
-layer: (empty)                   layer: parcels
-geometry field: geometry        geometry field: geometry
+input.gpkg            --->       output.gpkg
+layer: parcels                   layer: parcels
+geometry output: (empty)         geometry input: geom
 ```
 
-Run the pipeline and then use another `Vector Reader` on `output.gpkg` to verify the roundtrip.
+When the reader geometry output field is empty, the source geometry column name (for example `geom`) becomes the Hop field name. Run the pipeline and then use another `Vector Reader` on `output.gpkg` to verify the roundtrip.
 
 ## Modules
 
