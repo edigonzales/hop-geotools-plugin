@@ -7,6 +7,7 @@ import java.util.List;
 import org.geotools.api.data.DataStore;
 import org.geotools.api.feature.simple.SimpleFeatureType;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.referencing.CRS;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.locationtech.jts.geom.LineString;
@@ -17,7 +18,7 @@ class VectorSchemaProbeTest {
   @TempDir Path tempDir;
 
   @Test
-  void readsAllGeoPackageLayersAndTheirSchemas() throws Exception {
+  void readsAllGeoPackageLayersAndTheirSchemasWithCrs() throws Exception {
     Path file = tempDir.resolve("multi.gpkg");
     DataStore store = GeoToolsVectorSupport.create(file);
     try {
@@ -35,12 +36,14 @@ class VectorSchemaProbeTest {
     VectorSchemaProbe.LayerDefinition roads = VectorSchemaProbe.resolveLayer(layers, "roads");
     assertThat(roads.geometryFieldName()).isEqualTo("geom");
     assertThat(roads.geometryType()).isEqualTo("LineString");
-    assertThat(roads.fields()).containsExactly(new VectorSchemaProbe.FieldDefinition("name", "STRING"));
+    assertThat(roads.fields())
+        .containsExactly(new VectorSchemaProbe.FieldDefinition("name", "STRING"));
 
     VectorSchemaProbe.LayerDefinition places = VectorSchemaProbe.resolveLayer(layers, "PLACES");
     assertThat(places.geometryFieldName()).isEqualTo("shape");
     assertThat(places.geometryType()).isEqualTo("Point");
-    assertThat(places.fields()).containsExactly(new VectorSchemaProbe.FieldDefinition("rank", "INTEGER"));
+    assertThat(places.fields())
+        .containsExactly(new VectorSchemaProbe.FieldDefinition("rank", "INTEGER"));
   }
 
   @Test
@@ -67,9 +70,11 @@ class VectorSchemaProbeTest {
       String geometryFieldName,
       Class<?> geometryBinding,
       String attributeName,
-      Class<?> attributeBinding) {
+      Class<?> attributeBinding)
+      throws Exception {
     SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
     builder.setName(layerName);
+    builder.setCRS(CRS.decode("EPSG:2056", true));
     builder.add(attributeName, attributeBinding);
     builder.add(geometryFieldName, geometryBinding);
     builder.setDefaultGeometry(geometryFieldName);

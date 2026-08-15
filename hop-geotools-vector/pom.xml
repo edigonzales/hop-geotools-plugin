@@ -67,6 +67,14 @@
       <artifactId>gt-epsg-hsql</artifactId>
     </dependency>
 
+    <!-- Used explicitly by GeoToolsRuntimeSupport to make GeoTools referencing robust inside
+         Apache Hop's shared plugin classloader. GeoTools 35 manages this as version 2.2. -->
+    <dependency>
+      <groupId>tech.units</groupId>
+      <artifactId>indriya</artifactId>
+      <version>2.2</version>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
