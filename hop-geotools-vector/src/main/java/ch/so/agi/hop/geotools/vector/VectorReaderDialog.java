@@ -24,9 +24,10 @@ public class VectorReaderDialog extends BaseTransformDialog {
 
   private final VectorReaderMeta input;
   private TextVar wFileName;
+  private Button wbFile;
   private ComboVar wLayerName;
-  private TextVar wGeometryFieldName;
   private Text wAvailableFieldsPreview;
+  private TextVar wGeometryFieldName;
   private List<VectorSchemaProbe.LayerDefinition> layerDefinitions = List.of();
   private boolean suppressSchemaRefresh;
 
@@ -42,7 +43,7 @@ public class VectorReaderDialog extends BaseTransformDialog {
     PropsUi.setLook(shell);
     setShellImage(shell, input);
     shell.setText("Vector Reader");
-    shell.setMinimumSize(760, 520);
+    shell.setMinimumSize(800, 560);
 
     changed = input.hasChanged();
     FormLayout layout = new FormLayout();
@@ -69,92 +70,27 @@ public class VectorReaderDialog extends BaseTransformDialog {
     fdTransformName.top = new FormAttachment(0, margin);
     wTransformName.setLayoutData(fdTransformName);
 
-    Label wlFile = new Label(shell, SWT.RIGHT);
-    wlFile.setText("Vector file");
-    PropsUi.setLook(wlFile);
-    FormData fdlFile = new FormData();
-    fdlFile.left = new FormAttachment(0, 0);
-    fdlFile.right = new FormAttachment(props.getMiddlePct(), -margin);
-    fdlFile.top = new FormAttachment(wTransformName, margin * 2);
-    wlFile.setLayoutData(fdlFile);
-
-    Button wbFile = new Button(shell, SWT.PUSH | SWT.CENTER);
-    wbFile.setText("Browse...");
-    PropsUi.setLook(wbFile);
-    FormData fdbFile = new FormData();
-    fdbFile.right = new FormAttachment(100, 0);
-    fdbFile.top = new FormAttachment(wTransformName, margin * 2);
-    wbFile.setLayoutData(fdbFile);
-
-    wFileName = new TextVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wFileName);
-    FormData fdFile = new FormData();
-    fdFile.left = new FormAttachment(props.getMiddlePct(), 0);
-    fdFile.right = new FormAttachment(wbFile, -margin);
-    fdFile.top = new FormAttachment(wTransformName, margin * 2);
-    wFileName.setLayoutData(fdFile);
-
-    Label wlLayer = new Label(shell, SWT.RIGHT);
-    wlLayer.setText("Layer name (optional)");
-    PropsUi.setLook(wlLayer);
-    FormData fdlLayer = new FormData();
-    fdlLayer.left = new FormAttachment(0, 0);
-    fdlLayer.right = new FormAttachment(props.getMiddlePct(), -margin);
-    fdlLayer.top = new FormAttachment(wFileName, margin);
-    wlLayer.setLayoutData(fdlLayer);
-
-    wLayerName = new ComboVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    PropsUi.setLook(wLayerName);
-    FormData fdLayer = new FormData();
-    fdLayer.left = new FormAttachment(props.getMiddlePct(), 0);
-    fdLayer.right = new FormAttachment(100, 0);
-    fdLayer.top = new FormAttachment(wFileName, margin);
-    wLayerName.setLayoutData(fdLayer);
-
-    Label wlGeometry = new Label(shell, SWT.RIGHT);
-    wlGeometry.setText("Geometry output field");
-    PropsUi.setLook(wlGeometry);
-    FormData fdlGeometry = new FormData();
-    fdlGeometry.left = new FormAttachment(0, 0);
-    fdlGeometry.right = new FormAttachment(props.getMiddlePct(), -margin);
-    fdlGeometry.top = new FormAttachment(wLayerName, margin);
-    wlGeometry.setLayoutData(fdlGeometry);
-
-    wGeometryFieldName = new TextVar(variables, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-    wGeometryFieldName.setToolTipText(
-        "Optional. If empty, the source geometry attribute name is preserved.");
-    PropsUi.setLook(wGeometryFieldName);
-    FormData fdGeometry = new FormData();
-    fdGeometry.left = new FormAttachment(props.getMiddlePct(), 0);
-    fdGeometry.right = new FormAttachment(100, 0);
-    fdGeometry.top = new FormAttachment(wLayerName, margin);
-    wGeometryFieldName.setLayoutData(fdGeometry);
-
-    Label wlAvailableFields = new Label(shell, SWT.RIGHT);
-    wlAvailableFields.setText("Available fields");
-    PropsUi.setLook(wlAvailableFields);
-    FormData fdlAvailableFields = new FormData();
-    fdlAvailableFields.left = new FormAttachment(0, 0);
-    fdlAvailableFields.right = new FormAttachment(props.getMiddlePct(), -margin);
-    fdlAvailableFields.top = new FormAttachment(wGeometryFieldName, margin);
-    wlAvailableFields.setLayoutData(fdlAvailableFields);
-
-    wAvailableFieldsPreview =
-        new Text(shell, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-    wAvailableFieldsPreview.setEditable(false);
-    PropsUi.setLook(wAvailableFieldsPreview);
-    FormData fdAvailableFields = new FormData();
-    fdAvailableFields.left = new FormAttachment(props.getMiddlePct(), 0);
-    fdAvailableFields.right = new FormAttachment(100, 0);
-    fdAvailableFields.top = new FormAttachment(wGeometryFieldName, margin);
-    fdAvailableFields.height = 170;
-    wAvailableFieldsPreview.setLayoutData(fdAvailableFields);
-
     Button wOk = new Button(shell, SWT.PUSH);
     wOk.setText("OK");
     Button wCancel = new Button(shell, SWT.PUSH);
     wCancel.setText("Cancel");
-    setButtonPositions(new Button[] {wOk, wCancel}, margin, wAvailableFieldsPreview);
+    setButtonPositions(new Button[] {wOk, wCancel}, margin, null);
+
+    FormData fdMain = new FormData();
+    fdMain.left = new FormAttachment(0, 0);
+    fdMain.top = new FormAttachment(wTransformName, margin * 2);
+    fdMain.right = new FormAttachment(100, 0);
+    fdMain.bottom = new FormAttachment(wOk, -margin * 2);
+
+    VectorReaderDialogComposite content =
+        new VectorReaderDialogComposite(shell, SWT.NONE, variables, props.getMiddlePct());
+    content.setLayoutData(fdMain);
+
+    wFileName = content.getFileName();
+    wbFile = content.getBrowseFileButton();
+    wLayerName = content.getLayerName();
+    wAvailableFieldsPreview = content.getAvailableFieldsPreview();
+    wGeometryFieldName = content.getGeometryFieldName();
 
     wTransformName.addModifyListener(e -> input.setChanged());
     wFileName.addModifyListener(
@@ -187,6 +123,10 @@ public class VectorReaderDialog extends BaseTransformDialog {
     FileDialog dialog = new FileDialog(shell, SWT.OPEN);
     dialog.setFilterExtensions(new String[] {"*.shp;*.gpkg", "*.*"});
     dialog.setFilterNames(new String[] {"Vector files", "All files"});
+    String current = wFileName.getText();
+    if (!Utils.isEmpty(current)) {
+      dialog.setFilterPath(current);
+    }
     String selected = dialog.open();
     if (selected != null) {
       wFileName.setText(selected);
@@ -228,14 +168,13 @@ public class VectorReaderDialog extends BaseTransformDialog {
       layerDefinitions = VectorSchemaProbe.readLayers(Path.of(resolvedFileName));
       populateLayerCombo(layerDefinitions);
       refreshFieldsPreview();
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      // Schema inspection is optional design-time assistance. A broken third-party SPI or native
+      // service must never make the whole transform dialog impossible to open.
       layerDefinitions = List.of();
       clearLayerCombo();
-      String message = e.getMessage();
       resetAvailableFieldsPreview(
-          Utils.isEmpty(message)
-              ? "No schema information available."
-              : "No schema information available.\n" + message);
+          "No schema information available.\n" + rootCauseMessage(e));
     }
   }
 
@@ -300,6 +239,18 @@ public class VectorReaderDialog extends BaseTransformDialog {
     if (wAvailableFieldsPreview != null && !wAvailableFieldsPreview.isDisposed()) {
       wAvailableFieldsPreview.setText(message == null ? "" : message);
     }
+  }
+
+  private static String rootCauseMessage(Throwable throwable) {
+    Throwable current = throwable;
+    while (current.getCause() != null && current.getCause() != current) {
+      current = current.getCause();
+    }
+    String message = current.getMessage();
+    if (!Utils.isEmpty(message)) {
+      return message;
+    }
+    return current.getClass().getSimpleName();
   }
 
   private String resolveUiValue(String value) {
